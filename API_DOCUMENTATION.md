@@ -6,7 +6,7 @@ Welcome to the Power-API! Follow this guide to start making requests.
 You have been assigned specific API keys. Every request MUST include one of these keys in the headers.
 
 **Header Name**: `x-api-key`  
-**Example Key**: `user-key-100`
+**Example Key**: `yswyvxeiuxewfuidcbiweufci3443uefcbkefbdb`
 
 ---
 
@@ -27,7 +27,7 @@ To extract or convert media from social platforms.
   ```json
   {
     "Content-Type": "application/json",
-    "x-api-key": "YOUR_API_KEY"
+    "x-api-key": "yswyvxeiuxewfuidcbiweufci3443uefcbkefbdb"
   }
   ```
 - **Body**:
@@ -76,7 +76,7 @@ async function convertMedia() {
       format: 'pdf'
     }, {
       headers: {
-        'x-api-key': 'user-key-100'
+        'x-api-key': 'yswyvxeiuxewfuidcbiweufci3443uefcbkefbdb'
       }
     });
 
