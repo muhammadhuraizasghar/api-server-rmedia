@@ -6,7 +6,6 @@ import { Search, List, Shield, Download, CheckCircle2, AlertCircle } from 'lucid
 export default function Home() {
   const [url, setUrl] = useState('');
   const [format, setFormat] = useState('mp3');
-  const [apiKey, setApiKey] = useState('default-secret-key');
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState<{ [key: string]: number }>({});
   const [result, setResult] = useState<any>(null);
@@ -83,7 +82,7 @@ export default function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          'x-api-key': 'default-secret-key', // Dashboard internal key
         },
         body: JSON.stringify({ url, format }),
       });
@@ -138,32 +137,20 @@ export default function Home() {
         <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
           <div className="p-8">
             <form onSubmit={handleConvert} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">API Key</label>
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder="Enter your API Key"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Target Format</label>
-                  <select
-                    value={format}
-                    onChange={(e) => setFormat(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  >
-                    <option value="mp3">MP3 Audio</option>
-                    <option value="ogg">OGG Audio</option>
-                    <option value="flac">FLAC Audio</option>
-                    <option value="mp4">MP4 Video</option>
-                    <option value="pdf">PDF Document</option>
-                    <option value="jpg">JPG Image</option>
-                  </select>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Target Format</label>
+                <select
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                >
+                  <option value="mp3">MP3 Audio</option>
+                  <option value="ogg">OGG Audio</option>
+                  <option value="flac">FLAC Audio</option>
+                  <option value="mp4">MP4 Video</option>
+                  <option value="pdf">PDF Document</option>
+                  <option value="jpg">JPG Image</option>
+                </select>
               </div>
 
               <div className="space-y-2">
