@@ -11,15 +11,40 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    let downloadUrl = url;
+
+    // If it's a social media link (YouTube, Instagram, etc.), use Cobalt for "Perfect Media"
+    const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com/.test(url);
+    
+    if (isSocial) {
+      try {
+        const cobaltResponse = await axios.post('https://api.cobalt.tools/api/json', {
+          url: url,
+          videoQuality: '1080',
+          filenamePattern: 'basic'
+        }, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (cobaltResponse.data && cobaltResponse.data.url) {
+          downloadUrl = cobaltResponse.data.url;
+        }
+      } catch (cobaltErr) {
+        console.error('Cobalt extraction failed, falling back to direct proxy:', cobaltErr);
+      }
+    }
+
     const response = await axios({
       method: 'get',
-      url: url,
+      url: downloadUrl,
       responseType: 'stream',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Referer': new URL(url).origin,
       },
-      timeout: 30000, // 30 seconds timeout
+      timeout: 60000, // 60 seconds timeout for larger media
     });
 
     const contentType = response.headers['content-type'] || 'application/octet-stream';

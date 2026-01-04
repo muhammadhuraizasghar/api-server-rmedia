@@ -1,14 +1,18 @@
 export const SUPPORTED_FORMATS = [
   // Audio Formats
-  'mp3', 'ogg', 'mpa', 'flac', 'wav', 'aac', 'm4a', 'wma', 'aiff', 'alac',
+  'mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus', 'wma', 'aiff', 'amr', 'mpa', 'alac', 'mka', 'ape', 'pcm',
   // Video Formats
-  'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'mpeg',
+  'mp4', 'mp4-1080', 'mp4-2k', 'mp4-4k', 'webm', 'mkv', 'mov', 'avi', 'flv', 'wmv', '3gp', 'mpeg', 'm4v', 'f4v', 'vob', 'ogv', 'ts', 'm2ts',
   // Image Formats
-  'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico', 'heic',
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico', 'heic', 'psd', 'ai', 'eps', 'raw', 'cr2', 'nef', 'orf', 'sr2',
   // Document Formats
-  'pdf', 'docx', 'txt', 'epub', 'rtf', 'csv', 'xlsx', 'pptx',
-  // 100+ placeholders (extensible)
-  ...Array.from({ length: 60 }, (_, i) => `format_${i + 1}`)
+  'pdf', 'txt', 'docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'csv', 'json', 'xml', 'epub', 'rtf', 'odt', 'ods', 'odp',
+  // Archives & Compressed
+  'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'iso', 'dmg',
+  // Code & Web
+  'html', 'css', 'js', 'ts', 'py', 'java', 'cpp', 'c', 'php', 'rb', 'go', 'rs', 'sql', 'yaml', 'md',
+  // Professional & Other
+  'mxf', 'dpx', 'exr', 'tga', 'dds', 'pnm', 'jp2', 'j2k', 'jpf', 'jpm', 'jpg2', 'j2c', 'jpc', 'jxr', 'hdp', 'wdp'
 ];
 
 export const PLATFORM_MAPPING: Record<string, string> = {

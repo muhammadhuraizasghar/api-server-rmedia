@@ -146,18 +146,95 @@ export default function Home() {
                   onChange={(e) => setFormat(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 >
-                  <option value="mp3">MP3 Audio</option>
-                  <option value="m4a">M4A Audio</option>
-                  <option value="wav">WAV Audio</option>
-                  <option value="ogg">OGG Audio</option>
-                  <option value="flac">FLAC Audio</option>
-                  <option value="mp4">MP4 Video (720p)</option>
-                  <option value="mp4-1080">MP4 Video (1080p)</option>
-                  <option value="webm">WebM Video</option>
-                  <option value="mkv">MKV Video</option>
-                  <option value="pdf">PDF Document</option>
-                  <option value="jpg">JPG Image</option>
-                  <option value="png">PNG Image</option>
+                  <optgroup label="Popular Audio">
+                    <option value="mp3">MP3 - Standard Audio</option>
+                    <option value="m4a">M4A - Apple Audio</option>
+                    <option value="wav">WAV - High Quality</option>
+                    <option value="aac">AAC - Advanced Audio</option>
+                    <option value="flac">FLAC - Lossless</option>
+                  </optgroup>
+                  <optgroup label="Professional Audio">
+                    <option value="ogg">OGG Vorbis</option>
+                    <option value="opus">Opus Audio</option>
+                    <option value="wma">Windows Media Audio</option>
+                    <option value="aiff">AIFF - Studio Quality</option>
+                    <option value="amr">AMR - Voice Record</option>
+                  </optgroup>
+                  <optgroup label="Popular Video">
+                    <option value="mp4">MP4 - 720p HD</option>
+                    <option value="mp4-1080">MP4 - 1080p Full HD</option>
+                    <option value="mp4-2k">MP4 - 2K Quality</option>
+                    <option value="mp4-4k">MP4 - 4K Ultra HD</option>
+                    <option value="webm">WebM - High Quality</option>
+                  </optgroup>
+                  <optgroup label="Professional Video">
+                    <option value="mkv">MKV - Matroska Video</option>
+                    <option value="mov">MOV - QuickTime</option>
+                    <option value="avi">AVI - Standard Video</option>
+                    <option value="flv">FLV - Flash Video</option>
+                    <option value="wmv">WMV - Windows Media</option>
+                    <option value="3gp">3GP - Mobile Video</option>
+                  </optgroup>
+                  <optgroup label="Images & Graphics">
+                    <option value="jpg">JPG - Standard Image</option>
+                    <option value="png">PNG - Transparent</option>
+                    <option value="gif">GIF - Animated</option>
+                    <option value="webp">WebP - Modern Image</option>
+                    <option value="bmp">BMP - Bitmap</option>
+                    <option value="tiff">TIFF - Pro Image</option>
+                    <option value="svg">SVG - Vector</option>
+                    <option value="ico">ICO - Icon File</option>
+                  </optgroup>
+                  <optgroup label="Documents & Data">
+                    <option value="pdf">PDF - Document</option>
+                    <option value="txt">TXT - Plain Text</option>
+                    <option value="docx">DOCX - MS Word</option>
+                    <option value="doc">DOC - Legacy Word</option>
+                    <option value="xlsx">XLSX - MS Excel</option>
+                    <option value="xls">XLS - Legacy Excel</option>
+                    <option value="pptx">PPTX - Powerpoint</option>
+                    <option value="ppt">PPT - Legacy Powerpoint</option>
+                    <option value="csv">CSV - Data File</option>
+                    <option value="json">JSON - API Data</option>
+                    <option value="xml">XML - Structured Data</option>
+                    <option value="epub">EPUB - Ebook</option>
+                    <option value="rtf">RTF - Rich Text</option>
+                    <option value="odt">ODT - OpenDoc Text</option>
+                    <option value="ods">ODS - OpenDoc Sheet</option>
+                  </optgroup>
+                  <optgroup label="Archives">
+                    <option value="zip">ZIP - Compressed</option>
+                    <option value="rar">RAR - Archive</option>
+                    <option value="7z">7Z - 7-Zip Archive</option>
+                    <option value="tar">TAR - Unix Tape</option>
+                    <option value="gz">GZ - Gzip</option>
+                    <option value="bz2">BZ2 - Bzip2</option>
+                    <option value="xz">XZ - XZ Archive</option>
+                    <option value="iso">ISO - Disc Image</option>
+                  </optgroup>
+                  <optgroup label="Coding & Web">
+                    <option value="html">HTML - Web Page</option>
+                    <option value="css">CSS - Stylesheet</option>
+                    <option value="js">JS - Javascript</option>
+                    <option value="ts">TS - Typescript</option>
+                    <option value="py">PY - Python</option>
+                    <option value="java">Java Source</option>
+                    <option value="cpp">C++ Source</option>
+                    <option value="php">PHP Script</option>
+                    <option value="sql">SQL Database</option>
+                    <option value="yaml">YAML Config</option>
+                    <option value="md">MD - Markdown</option>
+                  </optgroup>
+                  <optgroup label="Pro Formats">
+                    <option value="mxf">MXF - Broadcast</option>
+                    <option value="dpx">DPX - Digital Picture</option>
+                    <option value="exr">EXR - OpenEXR</option>
+                    <option value="tga">TGA - Targa</option>
+                    <option value="dds">DDS - DirectDraw</option>
+                    <option value="psd">PSD - Photoshop</option>
+                    <option value="ai">AI - Illustrator</option>
+                    <option value="eps">EPS - PostScript</option>
+                  </optgroup>
                 </select>
               </div>
 
@@ -208,9 +285,14 @@ export default function Home() {
                     <CheckCircle2 className="text-green-400" size={20} />
                     <span>Extraction Successful</span>
                   </h3>
-                  <span className="text-xs bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30">
-                    {result.platform.toUpperCase()}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30 font-bold uppercase tracking-widest">
+                      Perfect Media
+                    </span>
+                    <span className="text-xs bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 font-semibold">
+                      {result.platform.toUpperCase()}
+                    </span>
+                  </div>
                 </div>
                 <pre className="text-xs font-mono text-slate-300 overflow-x-auto p-4 bg-black/30 rounded-xl mb-6">
                   {JSON.stringify(result, null, 2)}

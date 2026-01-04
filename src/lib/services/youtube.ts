@@ -4,32 +4,28 @@ import { PlatformService, MediaResult } from './types';
 export class YoutubeService implements PlatformService {
   async extract(url: string, format?: string): Promise<MediaResult[]> {
     try {
-      // YouTube extraction usually requires an API key or a downloader library.
-      // This is a simulation using oEmbed for basic metadata.
+      // Using a more reliable extraction method (simulating a real backend extraction)
+      // In a production app, you would use cobalt or a private extraction server
+      const videoId = this.extractVideoId(url);
+      
+      // We'll use a public oEmbed for metadata and a direct download proxy
       const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-      const { data } = await axios.get(oembedUrl);
+      const { data: meta } = await axios.get(oembedUrl);
 
       const results: MediaResult[] = [];
-      const videoId = this.extractVideoId(url);
 
-      // Main Video link (Simulated direct download via our proxy)
+      // Determine if it's audio or video based on format
+      const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(format || '');
+      
+      // We return the extraction request that our server-side download route will handle
       results.push({
-        url: `https://rr5---sn-n4v7kn7z.googlevideo.com/videoplayback?id=${videoId}&title=${encodeURIComponent(data.title)}`, // Simulated direct video URL
-        type: 'video',
+        url: url, // Pass the original URL to the downloader proxy
+        type: isAudio ? 'audio' : 'video',
         format: format || 'mp4',
-        title: data.title,
-        thumbnail: data.thumbnail_url,
+        title: meta.title,
+        quality: format?.includes('1080') ? '1080p' : '720p',
+        thumbnail: meta.thumbnail_url,
       });
-
-      // Audio format request
-      if (['mp3', 'ogg', 'flac'].includes(format || '')) {
-        results.push({
-          url: `https://rr5---sn-n4v7kn7z.googlevideo.com/videoplayback?id=${videoId}&audio=1&title=${encodeURIComponent(data.title)}`, // Simulated direct audio URL
-          type: 'audio',
-          format: format!,
-          title: `${data.title} (Audio)`,
-        });
-      }
 
       return results;
     } catch (error) {
