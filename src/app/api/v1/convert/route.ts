@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
           videoQuality: '1080',
           audioFormat: isAudio ? (format === 'mp3' ? 'mp3' : 'best') : 'best',
           isAudioOnly: isAudio,
-          filenamePattern: 'basic'
+          filenamePattern: 'basic',
+          twitterGif: true,
+          youtubeVideoCodec: 'h264' // Better compatibility for ffmpeg processing
         }, {
           headers: {
             'Accept': 'application/json',

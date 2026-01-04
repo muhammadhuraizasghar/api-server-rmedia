@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { spawn } from 'child_process';
+import { Readable } from 'stream';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -11,17 +13,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // If it's already a direct cobalt/cdn link, proxy it directly
-    // If it's still a social link, we handle it as a backup
+    // If it's a social link, we handle it as a backup
     let downloadUrl = url;
     const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com|twitter\.com|x\.com/.test(url);
+    const targetFormat = filename.split('.').pop()?.toLowerCase();
     
     if (isSocial && !url.includes('cobalt')) {
       // Backup extraction if Convert route missed it
       try {
+        const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(targetFormat || '');
         const cobaltResponse = await axios.post('https://api.cobalt.tools/api/json', {
           url: url,
           videoQuality: '1080',
+          isAudioOnly: isAudio,
           filenamePattern: 'basic'
         }, {
           headers: {
@@ -43,27 +47,48 @@ export async function GET(request: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
       },
       maxRedirects: 5,
-      timeout: 120000, // 2 mins for large files
+      timeout: 120000, 
     });
 
     const contentType = response.headers['content-type'] || 'application/octet-stream';
     const contentLength = response.headers['content-length'];
 
+    // Professional Conversion logic using ffmpeg if needed
+    // We only convert if target format is different from source and it's a common media conversion
+    const needsConversion = targetFormat && !contentType.includes(targetFormat) && 
+                           ['mp3', 'wav', 'ogg', 'aac'].includes(targetFormat);
+
     const headers = new Headers();
-    headers.set('Content-Type', contentType);
-    // Ensure filename has correct extension if missing
+    headers.set('Content-Type', needsConversion ? `audio/${targetFormat}` : contentType);
     let finalFilename = filename;
     if (!finalFilename.includes('.')) {
-      const ext = contentType.split('/')[1]?.split(';')[0] || 'bin';
-      finalFilename += `.${ext}`;
+      finalFilename += `.${targetFormat || 'bin'}`;
     }
-    
     headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(finalFilename)}"`);
-    if (contentLength) {
-      headers.set('Content-Length', contentLength);
+
+    if (needsConversion) {
+      // Stream through ffmpeg for real-time conversion
+      const ffmpeg = spawn('ffmpeg', [
+        '-i', 'pipe:0',
+        '-f', targetFormat!,
+        '-acodec', targetFormat === 'mp3' ? 'libmp3lame' : (targetFormat === 'wav' ? 'pcm_s16le' : 'copy'),
+        '-ab', '192k',
+        'pipe:1'
+      ]);
+
+      const stream = new ReadableStream({
+        start(controller) {
+          response.data.pipe(ffmpeg.stdin);
+          ffmpeg.stdout.on('data', (chunk) => controller.enqueue(chunk));
+          ffmpeg.stdout.on('end', () => controller.close());
+          ffmpeg.on('error', (err) => controller.error(err));
+          ffmpeg.stderr.on('data', (data) => console.log(`ffmpeg: ${data}`));
+        }
+      });
+      return new Response(stream, { headers });
     }
 
-    // Direct piping for speed and no corruption
+    // Direct piping for speed and no corruption if no conversion needed
     const stream = new ReadableStream({
       async start(controller) {
         response.data.on('data', (chunk: any) => controller.enqueue(chunk));
@@ -71,6 +96,10 @@ export async function GET(request: NextRequest) {
         response.data.on('error', (err: any) => controller.error(err));
       },
     });
+
+    if (contentLength && !needsConversion) {
+      headers.set('Content-Length', contentLength);
+    }
 
     return new Response(stream, { headers });
   } catch (error: any) {
