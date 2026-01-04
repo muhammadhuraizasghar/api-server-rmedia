@@ -166,7 +166,7 @@ export default function Home() {
 
         <footer className="mt-12 text-center text-slate-400 text-sm">
           <p>Powered by Next.js & Vercel • Secure API Architecture</p>
-        </div>
+        </footer>
       </div>
     </main>
   );
