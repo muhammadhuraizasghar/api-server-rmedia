@@ -11,12 +11,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // If it's already a direct cobalt/cdn link, proxy it directly
+    // If it's still a social link, we handle it as a backup
     let downloadUrl = url;
-
-    // If it's a social media link (YouTube, Instagram, etc.), use Cobalt for "Perfect Media"
-    const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com/.test(url);
+    const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com|twitter\.com|x\.com/.test(url);
     
-    if (isSocial) {
+    if (isSocial && !url.includes('cobalt')) {
+      // Backup extraction if Convert route missed it
       try {
         const cobaltResponse = await axios.post('https://api.cobalt.tools/api/json', {
           url: url,
@@ -28,13 +29,10 @@ export async function GET(request: NextRequest) {
             'Content-Type': 'application/json'
           }
         });
-
         if (cobaltResponse.data && cobaltResponse.data.url) {
           downloadUrl = cobaltResponse.data.url;
         }
-      } catch (cobaltErr) {
-        console.error('Cobalt extraction failed, falling back to direct proxy:', cobaltErr);
-      }
+      } catch (e) {}
     }
 
     const response = await axios({
@@ -42,9 +40,10 @@ export async function GET(request: NextRequest) {
       url: downloadUrl,
       responseType: 'stream',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
       },
-      timeout: 60000, // 60 seconds timeout for larger media
+      maxRedirects: 5,
+      timeout: 120000, // 2 mins for large files
     });
 
     const contentType = response.headers['content-type'] || 'application/octet-stream';
@@ -52,23 +51,24 @@ export async function GET(request: NextRequest) {
 
     const headers = new Headers();
     headers.set('Content-Type', contentType);
-    headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+    // Ensure filename has correct extension if missing
+    let finalFilename = filename;
+    if (!finalFilename.includes('.')) {
+      const ext = contentType.split('/')[1]?.split(';')[0] || 'bin';
+      finalFilename += `.${ext}`;
+    }
+    
+    headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(finalFilename)}"`);
     if (contentLength) {
       headers.set('Content-Length', contentLength);
     }
 
-    // Convert axios stream to a web stream that Next.js can return
+    // Direct piping for speed and no corruption
     const stream = new ReadableStream({
       async start(controller) {
-        response.data.on('data', (chunk: any) => {
-          controller.enqueue(chunk);
-        });
-        response.data.on('end', () => {
-          controller.close();
-        });
-        response.data.on('error', (err: any) => {
-          controller.error(err);
-        });
+        response.data.on('data', (chunk: any) => controller.enqueue(chunk));
+        response.data.on('end', () => controller.close());
+        response.data.on('error', (err: any) => controller.error(err));
       },
     });
 
