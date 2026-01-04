@@ -11,6 +11,25 @@ export default function Home() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const downloadFile = async (fileUrl: string, fileName: string) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'download';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Download failed:', err);
+      // Fallback: open in new tab if blob fetch fails
+      window.open(fileUrl, '_blank');
+    }
+  };
+
   const handleConvert = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -156,9 +175,36 @@ export default function Home() {
                     {result.platform.toUpperCase()}
                   </span>
                 </div>
-                <pre className="text-xs font-mono text-slate-300 overflow-x-auto p-4 bg-black/30 rounded-xl">
+                <pre className="text-xs font-mono text-slate-300 overflow-x-auto p-4 bg-black/30 rounded-xl mb-6">
                   {JSON.stringify(result, null, 2)}
                 </pre>
+
+                <div className="space-y-3">
+                  {result.results.map((media: any, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => downloadFile(media.url, `${media.title || 'media'}.${media.format}`)}
+                      className="w-full flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl hover:bg-blue-500/20 transition-all group"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-500 rounded-lg">
+                          <Download size={18} className="text-white" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                            Download {media.type.toUpperCase()}
+                          </p>
+                          <p className="text-[10px] text-slate-400 uppercase tracking-wider">
+                            Format: {media.format}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs font-mono text-blue-400">
+                        CLICK TO SAVE
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
