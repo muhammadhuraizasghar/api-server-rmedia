@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "API_KEYS": "default-secret-key,your-custom-key-1,your-custom-key-2"
+  }
+}
