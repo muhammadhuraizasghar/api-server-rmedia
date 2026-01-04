@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPlatformFromUrl, SUPPORTED_FORMATS } from '@/lib/registry';
 import { LinkedInService } from '@/lib/services/linkedin';
-// Import other services as they are implemented
+import { YoutubeService } from '@/lib/services/youtube';
+import { InstagramService } from '@/lib/services/instagram';
 
 const services = {
   linkedin: new LinkedInService(),
-  // instagram: new InstagramService(),
-  // youtube: new YoutubeService(),
+  youtube: new YoutubeService(),
+  instagram: new InstagramService(),
+  tiktok: new InstagramService(), // Placeholder
+  snapchat: new InstagramService(), // Placeholder
 };
 
 export async function POST(request: NextRequest) {
