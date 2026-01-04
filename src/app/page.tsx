@@ -15,7 +15,9 @@ export default function Home() {
     try {
       setDownloading(prev => ({ ...prev, [id]: 0 }));
       
-      const response = await fetch(fileUrl);
+      // Use our server-side proxy to avoid CORS and force download
+      const proxyUrl = `/api/v1/download?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(fileName)}`;
+      const response = await fetch(proxyUrl);
       if (!response.body) throw new Error('ReadableStream not supported');
 
       const contentLength = response.headers.get('content-length');
@@ -145,11 +147,17 @@ export default function Home() {
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="mp3">MP3 Audio</option>
+                  <option value="m4a">M4A Audio</option>
+                  <option value="wav">WAV Audio</option>
                   <option value="ogg">OGG Audio</option>
                   <option value="flac">FLAC Audio</option>
-                  <option value="mp4">MP4 Video</option>
+                  <option value="mp4">MP4 Video (720p)</option>
+                  <option value="mp4-1080">MP4 Video (1080p)</option>
+                  <option value="webm">WebM Video</option>
+                  <option value="mkv">MKV Video</option>
                   <option value="pdf">PDF Document</option>
                   <option value="jpg">JPG Image</option>
+                  <option value="png">PNG Image</option>
                 </select>
               </div>
 

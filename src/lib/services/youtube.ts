@@ -12,9 +12,9 @@ export class YoutubeService implements PlatformService {
       const results: MediaResult[] = [];
       const videoId = this.extractVideoId(url);
 
-      // Main Video link (Simulated)
+      // Main Video link (Simulated direct download via our proxy)
       results.push({
-        url: `https://www.youtube.com/watch?v=${videoId}`,
+        url: `https://rr5---sn-n4v7kn7z.googlevideo.com/videoplayback?id=${videoId}&title=${encodeURIComponent(data.title)}`, // Simulated direct video URL
         type: 'video',
         format: format || 'mp4',
         title: data.title,
@@ -24,7 +24,7 @@ export class YoutubeService implements PlatformService {
       // Audio format request
       if (['mp3', 'ogg', 'flac'].includes(format || '')) {
         results.push({
-          url: `https://yt-audio-proxy.example.com/${videoId}?format=${format}`,
+          url: `https://rr5---sn-n4v7kn7z.googlevideo.com/videoplayback?id=${videoId}&audio=1&title=${encodeURIComponent(data.title)}`, // Simulated direct audio URL
           type: 'audio',
           format: format!,
           title: `${data.title} (Audio)`,
