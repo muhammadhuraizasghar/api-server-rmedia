@@ -8,13 +8,41 @@ export default function Home() {
   const [format, setFormat] = useState('mp3');
   const [apiKey, setApiKey] = useState('default-secret-key');
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState<{ [key: string]: number }>({});
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const downloadFile = async (fileUrl: string, fileName: string) => {
+  const downloadFile = async (fileUrl: string, fileName: string, id: string) => {
     try {
+      setDownloading(prev => ({ ...prev, [id]: 0 }));
+      
       const response = await fetch(fileUrl);
-      const blob = await response.blob();
+      if (!response.body) throw new Error('ReadableStream not supported');
+
+      const contentLength = response.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      let loaded = 0;
+
+      const reader = response.body.getReader();
+      const chunks = [];
+
+      while(true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        chunks.push(value);
+        loaded += value.length;
+        
+        if (total > 0) {
+          const progress = Math.round((loaded / total) * 100);
+          setDownloading(prev => ({ ...prev, [id]: progress }));
+        } else {
+          // If no content-length, just show activity
+          setDownloading(prev => ({ ...prev, [id]: -1 }));
+        }
+      }
+
+      const blob = new Blob(chunks);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -23,10 +51,24 @@ export default function Home() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      
+      // Clear progress after success
+      setTimeout(() => {
+        setDownloading(prev => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+      }, 2000);
+
     } catch (err) {
       console.error('Download failed:', err);
-      // Fallback: open in new tab if blob fetch fails
       window.open(fileUrl, '_blank');
+      setDownloading(prev => {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      });
     }
   };
 
@@ -180,30 +222,61 @@ export default function Home() {
                 </pre>
 
                 <div className="space-y-3">
-                  {result.results.map((media: any, index: number) => (
-                    <button
-                      key={index}
-                      onClick={() => downloadFile(media.url, `${media.title || 'media'}.${media.format}`)}
-                      className="w-full flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl hover:bg-blue-500/20 transition-all group"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-500 rounded-lg">
-                          <Download size={18} className="text-white" />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
-                            Download {media.type.toUpperCase()}
-                          </p>
-                          <p className="text-[10px] text-slate-400 uppercase tracking-wider">
-                            Format: {media.format}
-                          </p>
-                        </div>
+                  {result.results.map((media: any, index: number) => {
+                    const progress = downloading[index.toString()];
+                    const isDownloading = progress !== undefined;
+                    
+                    return (
+                      <div key={index} className="space-y-2">
+                        <button
+                          disabled={isDownloading}
+                          onClick={() => downloadFile(media.url, `${media.title || 'media'}.${media.format}`, index.toString())}
+                          className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all group relative overflow-hidden ${
+                            isDownloading 
+                            ? 'bg-blue-500/5 border-blue-500/20 cursor-wait' 
+                            : 'bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20'
+                          }`}
+                        >
+                          {/* Progress Background */}
+                          {isDownloading && progress > 0 && (
+                            <div 
+                              className="absolute inset-0 bg-blue-500/10 transition-all duration-300" 
+                              style={{ width: `${progress}%` }}
+                            />
+                          )}
+
+                          <div className="flex items-center space-x-3 relative z-10">
+                            <div className={`p-2 rounded-lg ${isDownloading ? 'bg-blue-400 animate-pulse' : 'bg-blue-500'}`}>
+                              <Download size={18} className="text-white" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                                {isDownloading ? 'Downloading...' : `Download ${media.type.toUpperCase()}`}
+                              </p>
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wider">
+                                Format: {media.format}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-xs font-mono text-blue-400 relative z-10">
+                            {isDownloading 
+                              ? (progress === -1 ? 'PROCESSING...' : `${progress}%`) 
+                              : 'CLICK TO SAVE'
+                            }
+                          </div>
+                        </button>
+                        
+                        {isDownloading && (
+                          <div className="w-full bg-slate-800 rounded-full h-1 overflow-hidden">
+                            <div 
+                              className={`h-full bg-blue-500 transition-all duration-300 ${progress === -1 ? 'animate-shimmer w-full' : ''}`}
+                              style={{ width: progress === -1 ? '100%' : `${progress}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs font-mono text-blue-400">
-                        CLICK TO SAVE
-                      </div>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
