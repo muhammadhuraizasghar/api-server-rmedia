@@ -22,6 +22,11 @@ export const PLATFORM_MAPPING: Record<string, string> = {
   'youtu.be': 'youtube',
   'tiktok.com': 'tiktok',
   'snapchat.com': 'snapchat',
+  'twitter.com': 'twitter',
+  'x.com': 'x',
+  'facebook.com': 'facebook',
+  'reddit.com': 'reddit',
+  'pinterest.com': 'pinterest',
 };
 
 export function getPlatformFromUrl(url: string): string | null {

@@ -1,7 +1,7 @@
 import { PlatformService, MediaResult } from './types';
 import { getYtDlpInfo } from './ytdlp-util';
 
-export class InstagramService implements PlatformService {
+export class SocialMediaService implements PlatformService {
   async extract(url: string, format?: string): Promise<MediaResult[]> {
     try {
       const info = await getYtDlpInfo(url);
@@ -19,27 +19,20 @@ export class InstagramService implements PlatformService {
         url: bestFormat?.url || url,
         type: isAudio ? 'audio' : 'video',
         format: format || (isAudio ? 'mp3' : 'mp4'),
-        title: info.title || 'Instagram Media',
+        title: info.title || 'Social Media',
         thumbnail: info.thumbnail,
         quality: isAudio ? '320kbps' : (bestFormat?.resolution || '1080p'),
       });
 
       return results;
     } catch (error) {
-      console.error('Instagram extraction failed:', error);
-      return this.fallbackExtract(url, format);
+      console.error('Social media extraction failed:', error);
+      return [{
+        url: url,
+        type: 'video',
+        format: format || 'mp4',
+        title: 'Social Media',
+      }];
     }
-  }
-
-  private async fallbackExtract(url: string, format?: string): Promise<MediaResult[]> {
-    const results: MediaResult[] = [];
-    results.push({
-      url: url,
-      type: 'video',
-      format: format || 'mp4',
-      title: 'Instagram Media',
-      thumbnail: 'https://images.instagram.com/placeholder.jpg',
-    });
-    return results;
   }
 }

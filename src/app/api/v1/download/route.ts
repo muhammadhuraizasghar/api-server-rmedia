@@ -12,42 +12,72 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
 
-  try {
-    // If it's a social link, we handle it as a backup
-    let downloadUrl = url;
-    const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com|twitter\.com|x\.com/.test(url);
-    const targetFormat = filename.split('.').pop()?.toLowerCase();
-    
-    if (isSocial && !url.includes('cobalt')) {
-      // Backup extraction if Convert route missed it
-      try {
-        const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(targetFormat || '');
-        const cobaltResponse = await axios.post('https://api.cobalt.tools/api/json', {
-          url: url,
-          videoQuality: '1080',
-          isAudioOnly: isAudio,
-          filenamePattern: 'basic'
-        }, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-        if (cobaltResponse.data && cobaltResponse.data.url) {
-          downloadUrl = cobaltResponse.data.url;
-        }
-      } catch (e) {}
-    }
+  const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com|twitter\.com|x\.com|facebook\.com|reddit\.com|pinterest\.com/.test(url);
+  const targetFormat = filename.split('.').pop()?.toLowerCase();
+  const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(targetFormat || '');
 
+  if (isSocial) {
+    try {
+      // Use yt-dlp for direct streaming of social media
+      const args = [
+        '-o', '-', // output to stdout
+        '--no-playlist',
+        '--quiet',
+        '--no-warnings',
+      ];
+
+      if (isAudio) {
+        args.push('-x', '--audio-format', targetFormat || 'mp3', '--audio-quality', '0');
+      } else {
+        // Use 'best' to ensure a single file that can be streamed to stdout
+        // 'bestvideo+bestaudio' often requires a seekable output or temporary files
+        args.push('-f', 'best');
+      }
+
+      args.push(url);
+
+      const ytDlp = spawn('yt-dlp', args);
+
+      const stream = new ReadableStream({
+        start(controller) {
+          ytDlp.stdout.on('data', (chunk) => controller.enqueue(chunk));
+          ytDlp.stdout.on('end', () => controller.close());
+          ytDlp.on('error', (err) => {
+            console.error('yt-dlp spawn error:', err);
+            controller.error(err);
+          });
+          ytDlp.stderr.on('data', (data) => {
+            // Log errors but don't necessarily fail the stream unless it's critical
+            console.error(`yt-dlp stderr: ${data}`);
+          });
+        },
+        cancel() {
+          ytDlp.kill();
+        }
+      });
+
+      const headers = new Headers();
+      headers.set('Content-Type', isAudio ? `audio/${targetFormat || 'mp3'}` : `video/${targetFormat || 'mp4'}`);
+      headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+      
+      return new Response(stream, { headers });
+    } catch (error: any) {
+      console.error('yt-dlp streaming failed:', error.message);
+      // Fallback to axios if yt-dlp fails (maybe it's a direct link after all)
+    }
+  }
+
+  try {
+    // Standard direct file download logic for non-social or fallback
     const response = await axios({
       method: 'get',
-      url: downloadUrl,
+      url: url,
       responseType: 'stream',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
       },
       maxRedirects: 5,
-      timeout: 120000, 
+      timeout: 300000, // 5 minutes for large files
     });
 
     const contentType = response.headers['content-type'] || 'application/octet-stream';

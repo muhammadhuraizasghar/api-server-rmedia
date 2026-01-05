@@ -4,13 +4,21 @@ import { getPlatformFromUrl, SUPPORTED_FORMATS } from '@/lib/registry';
 import { LinkedInService } from '@/lib/services/linkedin';
 import { YoutubeService } from '@/lib/services/youtube';
 import { InstagramService } from '@/lib/services/instagram';
+import { SocialMediaService } from '@/lib/services/social';
+
+const socialService = new SocialMediaService();
 
 const services = {
   linkedin: new LinkedInService(),
   youtube: new YoutubeService(),
   instagram: new InstagramService(),
-  tiktok: new InstagramService(), // Placeholder
-  snapchat: new InstagramService(), // Placeholder
+  tiktok: socialService,
+  snapchat: socialService,
+  twitter: socialService,
+  x: socialService,
+  facebook: socialService,
+  reddit: socialService,
+  pinterest: socialService,
 };
 
 export async function POST(request: NextRequest) {
@@ -36,43 +44,6 @@ export async function POST(request: NextRequest) {
 
     const service = services[platform as keyof typeof services];
     let results = await service.extract(url, format);
-
-    // Super-power: Actual extraction for social media
-    const isSocial = /youtube\.com|youtu\.be|instagram\.com|tiktok\.com|linkedin\.com|snapchat\.com|twitter\.com|x\.com/.test(url);
-    if (isSocial) {
-      try {
-        const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(format || '');
-        const cobaltResponse = await axios.post('https://api.cobalt.tools/api/json', {
-          url: url,
-          videoQuality: '1080',
-          audioFormat: isAudio ? (format === 'mp3' ? 'mp3' : 'best') : 'best',
-          isAudioOnly: isAudio,
-          filenamePattern: 'basic',
-          twitterGif: true,
-          youtubeVideoCodec: 'h264' // Better compatibility for ffmpeg processing
-        }, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
-          }
-        });
-
-        if (cobaltResponse.data && cobaltResponse.data.url) {
-          results = [{
-            url: cobaltResponse.data.url,
-            type: isAudio ? 'audio' : 'video',
-            format: format || (isAudio ? 'mp3' : 'mp4'),
-            title: results[0]?.title || 'Extracted Media',
-            quality: isAudio ? '320kbps' : '1080p Full HD',
-            thumbnail: results[0]?.thumbnail
-          }];
-        }
-      } catch (cobaltErr: any) {
-        console.error('Cobalt extraction during convert failed:', cobaltErr.message);
-        // Fallback to initial results if cobalt fails
-      }
-    }
 
     return NextResponse.json({
       success: true,

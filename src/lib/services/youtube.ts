@@ -1,42 +1,48 @@
-import axios from 'axios';
 import { PlatformService, MediaResult } from './types';
+import { getYtDlpInfo } from './ytdlp-util';
 
 export class YoutubeService implements PlatformService {
   async extract(url: string, format?: string): Promise<MediaResult[]> {
     try {
-      // Using a more reliable extraction method (simulating a real backend extraction)
-      // In a production app, you would use cobalt or a private extraction server
-      const videoId = this.extractVideoId(url);
+      const info = await getYtDlpInfo(url);
       
-      // We'll use a public oEmbed for metadata and a direct download proxy
-      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-      const { data: meta } = await axios.get(oembedUrl);
-
       const results: MediaResult[] = [];
-
-      // Determine if it's audio or video based on format
       const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(format || '');
       
-      // We return the extraction request that our server-side download route will handle
+      // Find the best format
+      let bestFormat = info.formats.filter((f: any) => f.vcodec !== 'none' && f.acodec !== 'none').pop();
+      if (isAudio) {
+        bestFormat = info.formats.filter((f: any) => f.vcodec === 'none' && f.acodec !== 'none').pop();
+      }
+
       results.push({
-        url: url, // Pass the original URL to the downloader proxy
+        url: bestFormat?.url || url,
         type: isAudio ? 'audio' : 'video',
-        format: format || 'mp4',
-        title: meta.title,
-        quality: format?.includes('1080') ? '1080p' : '720p',
-        thumbnail: meta.thumbnail_url,
+        format: format || (isAudio ? 'mp3' : 'mp4'),
+        title: info.title,
+        quality: isAudio ? '320kbps' : (bestFormat?.resolution || '720p'),
+        thumbnail: info.thumbnail,
       });
 
       return results;
     } catch (error) {
       console.error('YouTube extraction failed:', error);
-      throw new Error('Failed to extract media from YouTube');
+      // Fallback to basic extraction if yt-dlp fails
+      return this.fallbackExtract(url, format);
     }
   }
 
-  private extractVideoId(url: string): string {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : 'unknown';
+  private async fallbackExtract(url: string, format?: string): Promise<MediaResult[]> {
+    // Basic fallback logic
+    const results: MediaResult[] = [];
+    const isAudio = ['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'opus'].includes(format || '');
+    results.push({
+      url: url,
+      type: isAudio ? 'audio' : 'video',
+      format: format || 'mp4',
+      title: 'YouTube Media',
+      quality: '720p',
+    });
+    return results;
   }
 }
